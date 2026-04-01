@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bach-preludes-analysis"
+version = "0.1.0"
+description = "Symbolic harmonic analysis and comparison workflows for Bach preludes."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+  { name = "meco" }
+]
+dependencies = [
+  "matplotlib>=3.8",
+  "music21>=9.3",
+  "numpy>=1.26",
+  "pandas>=2.2",
+  "tabulate>=0.9",
+]
+
+[project.optional-dependencies]
+notebook = [
+  "ipykernel>=6.29",
+  "jupyterlab>=4.2",
+]
+audio = [
+  "librosa>=0.10",
+  "soundfile>=0.12",
+]
+
+[project.scripts]
+bach-preludes-analysis = "bach_preludes_analysis.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

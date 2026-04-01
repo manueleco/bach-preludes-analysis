@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Environments
+.venv/
+venv/
+env/
+.cache/
+
+# macOS
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Local data and generated outputs
+outputs/reports/*
+outputs/figures/*
+!outputs/reports/.gitkeep
+!outputs/figures/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# Optional raw score copies if they are downloaded locally
+data/raw/downloads/
