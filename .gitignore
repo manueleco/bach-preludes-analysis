@@ -27,6 +27,10 @@ outputs/figures/*
 !outputs/figures/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
+data/raw/pdfs/**
+!data/raw/pdfs/.gitkeep
+tools/**
+!tools/.gitkeep
 
 # Optional raw score copies if they are downloaded locally
 data/raw/downloads/

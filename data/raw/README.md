@@ -45,15 +45,30 @@ suite_06_prelude_d_major_bwv1012.musicxml
 ## Practical Route To The Six MusicXML Files
 
 1. Use IMSLP as the authoritative checklist for BWV `1007-1012`.
-2. Find editable notation in MuseScore or another notation source you trust.
-3. Export each prelude to `MusicXML` or `MXL` from MuseScore Studio.
-4. Normalize filenames with:
+2. If you only have a scan PDF, split it with:
+
+```bash
+zsh scripts/split_cello_suite_pdf.sh "/path/to/IMSLP36902-PMLP04291-Bach-BWV1007-1012klengel.pdf" data/raw/pdfs
+```
+
+3. Send those PDFs to Audiveris with:
+
+```bash
+zsh scripts/process_raw_pdfs_with_audiveris.sh data/raw/pdfs data/raw/downloads ./tools/Audiveris.app
+```
+
+4. Open and clean the generated files in MuseScore Studio.
+5. Normalize filenames with:
 
 ```bash
 .venv/bin/python scripts/prepare_cello_suite_corpus.py --input /path/to/exports --output-dir data/raw
 ```
 
-5. Compare the resulting files against `data/raw/cello_suite_manifest.csv`.
+6. Compare the resulting files against `data/raw/cello_suite_manifest.csv`.
+
+The Audiveris processing script sets a local `HOME` automatically so the OMR run does not depend on writing into your macOS user Library folders.
+When you pass `./tools/Audiveris.app` on macOS, the wrapper launches the app bundle for you instead of requiring the internal executable path.
+With the current Klengel scan, Audiveris is installing and opening correctly here, but the batch transcription still fails during sheet processing, so expect to inspect `.omr` results manually before you count on exported `MusicXML`.
 
 ## Why This Matters
 
