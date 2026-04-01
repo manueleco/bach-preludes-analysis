@@ -163,7 +163,7 @@ Split the scanned suite PDF into raw prelude PDFs:
 
 ```bash
 zsh scripts/split_cello_suite_pdf.sh \
-  "/Users/meco/Downloads/IMSLP36902-PMLP04291-Bach-BWV1007-1012klengel.pdf" \
+  "/Users/meco/Downloads/IMSLP268080-PMLP04291-Bach_6_Cello_Suites_without_slurs_Yokoyama_2013.pdf" \
   data/raw/pdfs
 ```
 
@@ -181,6 +181,7 @@ zsh scripts/process_raw_pdfs_with_audiveris.sh data/raw/pdfs data/raw/downloads 
 
 The script automatically sets a repo-local `HOME` for Audiveris so it does not need to write into your user Library folder while processing.
 If you pass `./tools/Audiveris.app` on macOS, the wrapper launches the app bundle with `open -a` and forwards the batch arguments for you.
+If your user-level Audiveris install already has OCR languages, the wrapper copies `tessdata` into the repo-local Audiveris home automatically.
 
 Open generated MusicXML or MXL files in MuseScore Studio:
 
@@ -192,7 +193,7 @@ Run the whole local pipeline in one shot:
 
 ```bash
 zsh scripts/run_pdf_to_musescore_pipeline.sh \
-  "/Users/meco/Downloads/IMSLP36902-PMLP04291-Bach-BWV1007-1012klengel.pdf" \
+  "/Users/meco/Downloads/IMSLP268080-PMLP04291-Bach_6_Cello_Suites_without_slurs_Yokoyama_2013.pdf" \
   data/raw/pdfs \
   data/raw/downloads \
   ./tools/Audiveris.app
@@ -231,12 +232,12 @@ The IMSLP collection page for the six suites confirms the scope and also lists p
 Recommended MusicXML gathering workflow:
 
 1. Use IMSLP as the authoritative work list and editorial reference for the six suites.
-2. If you only have a scan PDF, split it into the six raw prelude PDFs with `scripts/split_cello_suite_pdf.sh`.
-3. Install Audiveris locally with `scripts/install_audiveris.sh` or use the copy cloned outside the repo as a reference/source checkout.
+2. Prefer the Yokoyama `without slurs` edition when you need to start from PDF, because it is much cleaner for OMR than the older scanned editions.
+3. If you only have that PDF, split it into the six raw prelude PDFs with `scripts/split_cello_suite_pdf.sh`.
 4. Run those PDFs through Audiveris to obtain `MusicXML` or `MXL`.
 5. Open the results in MuseScore Studio and clean them up manually.
 6. Normalize filenames with `scripts/prepare_cello_suite_corpus.py`.
-7. Review each exported prelude quickly in MuseScore before analysis, especially slurs, grace notes, tuplets, repeats, and editorial bowings.
+7. Review each exported prelude quickly in MuseScore before analysis, especially tuplets, rhythm alignment, ornaments, repeats, and any pages with dense beaming.
 
 About automation limits:
 
@@ -247,8 +248,7 @@ About automation limits:
 Known current limitation on this machine:
 
 - Audiveris `5.10.2` installs and runs correctly, and it can create `.omr` books from the split PDF files.
-- With the current Klengel scan, the batch OMR run is still failing during sheet processing (`Error processing stub`, already at `LOAD`/`PAGE`), so `.mxl` export is not yet being produced automatically for this specific source.
-- That means the scripted pipeline is ready, but this PDF still needs either a different OMR-compatible source, more Audiveris tuning, or manual work in the Audiveris GUI before MuseScore cleanup.
+- The macOS GUI route is currently more reliable than the bare batch CLI for difficult sources, so for borderline pages you should expect to review and possibly export from the Audiveris app itself before MuseScore cleanup.
 
 ## Next Directions
 

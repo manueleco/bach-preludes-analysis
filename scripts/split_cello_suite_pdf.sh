@@ -12,8 +12,9 @@ OUTPUT_DIR="$2"
 
 mkdir -p "$OUTPUT_DIR"
 
-# These ranges are best-effort initial cuts for the six BWV 1007-1012 preludes
-# in the provided Klengel PDF. They should be reviewed musically before OMR.
+# These ranges target the Yokoyama "without slurs" edition from IMSLP.
+# They isolate the six preludes only and are much cleaner for OMR than the
+# earlier Klengel scan, but they should still be reviewed musically.
 declare -a NAMES=(
   "suite_01_prelude_g_major_bwv1007_raw.pdf"
   "suite_02_prelude_d_minor_bwv1008_raw.pdf"
@@ -24,12 +25,12 @@ declare -a NAMES=(
 )
 
 declare -a RANGES=(
-  "1-2"
-  "7-8"
-  "13-15"
-  "19-22"
-  "25-30"
-  "37-41"
+  "6-7"
+  "12-13"
+  "20-21"
+  "30-31"
+  "40-43"
+  "49-51"
 )
 
 for idx in {1..6}; do

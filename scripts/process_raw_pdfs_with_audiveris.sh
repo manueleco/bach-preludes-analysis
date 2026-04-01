@@ -12,6 +12,20 @@ OUTPUT_DIR="$2"
 AUDIVERIS_INPUT="${3:-}"
 AUDIVERIS_HOME="${4:-./tools/audiveris-home}"
 AUDIVERIS_APP=""
+SYSTEM_TESSDATA_DIR="${HOME}/Library/Application Support/AudiverisLtd/audiveris/tessdata"
+
+abspath() {
+  local target="$1"
+  if [[ -d "$target" ]]; then
+    (cd "$target" && pwd)
+  else
+    local dir
+    dir="$(dirname "$target")"
+    local base
+    base="$(basename "$target")"
+    (cd "$dir" && printf '%s/%s\n' "$(pwd)" "$base")
+  fi
+}
 
 resolve_audiveris_bin() {
   local candidate="${1:-}"
@@ -46,28 +60,39 @@ resolve_audiveris_bin() {
   return 1
 }
 
+AUDIVERIS_HOME="$(abspath "$AUDIVERIS_HOME")"
+
 if [[ -n "$AUDIVERIS_INPUT" && -d "$AUDIVERIS_INPUT" && "$AUDIVERIS_INPUT" == *.app ]]; then
-  AUDIVERIS_APP="$AUDIVERIS_INPUT"
-  AUDIVERIS_BIN="$AUDIVERIS_INPUT/Contents/MacOS/Audiveris"
+  AUDIVERIS_APP="$(abspath "$AUDIVERIS_INPUT")"
+  AUDIVERIS_BIN="$AUDIVERIS_APP/Contents/MacOS/Audiveris"
 else
   AUDIVERIS_BIN="$(resolve_audiveris_bin "$AUDIVERIS_INPUT")"
   if [[ "$AUDIVERIS_BIN" == "./tools/Audiveris.app/Contents/MacOS/Audiveris" ]]; then
-    AUDIVERIS_APP="./tools/Audiveris.app"
+    AUDIVERIS_APP="$(abspath "./tools/Audiveris.app")"
   fi
 fi
 
 mkdir -p "$OUTPUT_DIR"
 mkdir -p "$AUDIVERIS_HOME"
 
+LOCAL_TESSDATA_DIR="$AUDIVERIS_HOME/Library/Application Support/AudiverisLtd/audiveris/tessdata"
+if [[ ! -d "$LOCAL_TESSDATA_DIR" ]] && [[ -d "$SYSTEM_TESSDATA_DIR" ]]; then
+  mkdir -p "$(dirname "$LOCAL_TESSDATA_DIR")"
+  cp -R "$SYSTEM_TESSDATA_DIR" "$LOCAL_TESSDATA_DIR"
+fi
+
 for pdf in "$RAW_DIR"/*.pdf; do
   [[ -e "$pdf" ]] || continue
   echo "processing $pdf"
   if [[ -n "$AUDIVERIS_APP" && "$(uname -s)" == "Darwin" ]]; then
+    log_prefix="$OUTPUT_DIR/.audiveris_$(basename "${pdf%.*}")"
     open -n -W -j -a "$AUDIVERIS_APP" \
       --env HOME="$AUDIVERIS_HOME" \
-      -o /dev/stdout \
-      --stderr /dev/stderr \
+      -o "${log_prefix}.stdout.log" \
+      --stderr "${log_prefix}.stderr.log" \
       --args -batch -transcribe -export -output "$OUTPUT_DIR" "$pdf"
+    [[ -f "${log_prefix}.stdout.log" ]] && cat "${log_prefix}.stdout.log"
+    [[ -f "${log_prefix}.stderr.log" ]] && cat "${log_prefix}.stderr.log" >&2
   else
     HOME="$AUDIVERIS_HOME" "$AUDIVERIS_BIN" -batch -transcribe -export -output "$OUTPUT_DIR" "$pdf"
   fi
