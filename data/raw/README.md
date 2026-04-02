@@ -39,9 +39,10 @@ suite_06_prelude_d_major_bwv1012.musicxml
 ## Suggested Workflow
 
 1. collect or export the scores
-2. normalize filenames
-3. copy them into this folder
-4. run `python main.py analyze-corpus --input-dir data/raw`
+2. if they come from OMR, stage them first in `data/converted/audiveris/`
+3. normalize filenames
+4. copy only the curated analysis-ready files into this folder
+5. run `python main.py analyze-corpus --input-dir data/raw`
 
 ## Practical Route To The Six MusicXML Files
 
@@ -55,14 +56,14 @@ zsh scripts/split_cello_suite_pdf.sh "/path/to/IMSLP268080-PMLP04291-Bach_6_Cell
 3. Send those PDFs to Audiveris with:
 
 ```bash
-zsh scripts/process_raw_pdfs_with_audiveris.sh data/raw/pdfs data/raw/downloads ./tools/Audiveris.app
+zsh scripts/process_raw_pdfs_with_audiveris.sh data/raw/pdfs data/converted/audiveris ./tools/Audiveris.app
 ```
 
-4. Open and clean the generated files in MuseScore Studio.
+4. Open and clean the generated files in MuseScore Studio from `data/converted/audiveris/`.
 5. Normalize filenames with:
 
 ```bash
-.venv/bin/python scripts/prepare_cello_suite_corpus.py --input /path/to/exports --output-dir data/raw
+.venv/bin/python scripts/prepare_cello_suite_corpus.py --input data/converted/audiveris --output-dir data/raw
 ```
 
 6. Compare the resulting files against `data/raw/cello_suite_manifest.csv`.

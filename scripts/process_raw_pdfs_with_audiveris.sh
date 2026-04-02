@@ -3,12 +3,12 @@
 set -euo pipefail
 
 if [[ $# -lt 2 ]]; then
-  echo "usage: $0 <raw-pdf-dir> <output-dir> [audiveris-app-or-bin] [audiveris-home]"
+  echo "usage: $0 <raw-pdf-dir> <converted-dir> [audiveris-app-or-bin] [audiveris-home]"
   exit 1
 fi
 
 RAW_DIR="$1"
-OUTPUT_DIR="$2"
+CONVERTED_DIR="$2"
 AUDIVERIS_INPUT="${3:-}"
 AUDIVERIS_HOME="${4:-./tools/audiveris-home}"
 AUDIVERIS_APP=""
@@ -60,6 +60,8 @@ resolve_audiveris_bin() {
   return 1
 }
 
+RAW_DIR="$(abspath "$RAW_DIR")"
+CONVERTED_DIR="$(abspath "$CONVERTED_DIR")"
 AUDIVERIS_HOME="$(abspath "$AUDIVERIS_HOME")"
 
 if [[ -n "$AUDIVERIS_INPUT" && -d "$AUDIVERIS_INPUT" && "$AUDIVERIS_INPUT" == *.app ]]; then
@@ -72,7 +74,7 @@ else
   fi
 fi
 
-mkdir -p "$OUTPUT_DIR"
+mkdir -p "$CONVERTED_DIR"
 mkdir -p "$AUDIVERIS_HOME"
 
 LOCAL_TESSDATA_DIR="$AUDIVERIS_HOME/Library/Application Support/AudiverisLtd/audiveris/tessdata"
@@ -83,17 +85,19 @@ fi
 
 for pdf in "$RAW_DIR"/*.pdf; do
   [[ -e "$pdf" ]] || continue
+  pdf="$(abspath "$pdf")"
   echo "processing $pdf"
   if [[ -n "$AUDIVERIS_APP" && "$(uname -s)" == "Darwin" ]]; then
-    log_prefix="$OUTPUT_DIR/.audiveris_$(basename "${pdf%.*}")"
+    log_prefix="$CONVERTED_DIR/.audiveris_$(basename "${pdf%.*}")"
+    rm -f "${log_prefix}.stdout.log" "${log_prefix}.stderr.log"
     open -n -W -j -a "$AUDIVERIS_APP" \
       --env HOME="$AUDIVERIS_HOME" \
       -o "${log_prefix}.stdout.log" \
       --stderr "${log_prefix}.stderr.log" \
-      --args -batch -transcribe -export -output "$OUTPUT_DIR" "$pdf"
+      --args -batch -transcribe -export -output "$CONVERTED_DIR" "$pdf"
     [[ -f "${log_prefix}.stdout.log" ]] && cat "${log_prefix}.stdout.log"
     [[ -f "${log_prefix}.stderr.log" ]] && cat "${log_prefix}.stderr.log" >&2
   else
-    HOME="$AUDIVERIS_HOME" "$AUDIVERIS_BIN" -batch -transcribe -export -output "$OUTPUT_DIR" "$pdf"
+    HOME="$AUDIVERIS_HOME" "$AUDIVERIS_BIN" -batch -transcribe -export -output "$CONVERTED_DIR" "$pdf"
   fi
 done

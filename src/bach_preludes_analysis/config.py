@@ -8,6 +8,8 @@ SRC_ROOT = PACKAGE_ROOT.parent
 PROJECT_ROOT = SRC_ROOT.parent
 
 DATA_RAW_DIR = PROJECT_ROOT / "data" / "raw"
+DATA_CONVERTED_DIR = PROJECT_ROOT / "data" / "converted"
+DATA_CONVERTED_AUDIVERIS_DIR = DATA_CONVERTED_DIR / "audiveris"
 DATA_PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 DATA_AUDIO_RAW_DIR = PROJECT_ROOT / "data" / "audio" / "raw"
 DATA_AUDIO_PROCESSED_DIR = PROJECT_ROOT / "data" / "audio" / "processed"

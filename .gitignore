@@ -29,8 +29,9 @@ data/processed/*
 !data/processed/.gitkeep
 data/raw/pdfs/**
 !data/raw/pdfs/.gitkeep
+data/converted/audiveris/*
+!data/converted/audiveris/.gitkeep
 tools/**
 !tools/.gitkeep
 
 # Optional raw score copies if they are downloaded locally
-data/raw/downloads/
