@@ -1,270 +1,224 @@
 # Bach Preludes Analysis
 
-Python toolkit for harmonic and comparative analysis of the six Bach cello-suite preludes, BWV `1007-1012`, using symbolic scores (`MusicXML` or `MIDI`) and, optionally, audio-based features with `Essentia` or a `librosa` fallback backend.
+Python toolkit for symbolic and audio-assisted analysis of a curated collection of works by one composer.
 
-## Goals
+Today the main case study is the six Bach cello-suite preludes `BWV 1007-1012`, but the repo is now structured so a future corpus such as Chopin nocturnes can be added with the same workflow.
 
-- analyze each prelude with a consistent symbolic pipeline
-- optionally analyze recordings to extract tempo, metering, tonality, and spectral descriptors
-- compare multiple preludes through harmonic, tonal, and voice-leading features
-- compare multiple recordings through tempo, dynamic, and spectral profiles
-- present results in a way that is readable for musicians, not only developers
-- keep the project ready to grow into a richer app or web interface later
+## Project Intent
 
-## Current Scope
+- use curated symbolic scores as the source of truth for harmony
+- use audio to study expression, tempo, rubato, dynamics, spectral density, and articulation proxies
+- compare pieces inside one collection with reproducible metrics
+- keep private or copyrighted assets out of GitHub
+- document the project so musicians can read the outputs without needing a software background
 
-The repository includes a first analysis stack for:
+## Analysis Scope
+
+The symbolic layer currently targets:
 
 - global key and local key regions
-- beat or event-based harmonic segmentation
-- chord labels, inversions, sevenths, Roman numerals, and broad harmonic function
+- harmonic segments by beat or event
+- chord root, quality, inversion, seventh, Roman numeral, and broad harmonic function
 - tonicizations and modulation cues
 - harmonic rhythm
 - cadence heuristics
-- secondary dominants and leading-tone chords
-- non-chord tone heuristics
+- secondary dominants and leading-tone functions
+- non-chord-tone heuristics
 - recurrent progressions and sequence detection
 - chromatic and dissonance-density indicators
 - basic voice-leading diagnostics
-- cross-prelude comparison tables and similarity scores
 
-Some categories, especially cadences, non-chord tones, and voice-leading, are implemented as heuristic `v1` analyzers. They are designed to be inspectable and easy to refine as the corpus grows.
+The audio layer currently targets:
 
-Because this corpus is for solo cello, harmony is often implied rather than fully verticalized on the page. That means the project should be read as a symbolic inference tool:
+- pulse and tempo estimation
+- local tempo and rubato
+- dynamic range and variability
+- spectral centroid, bandwidth, flatness, and flux
+- transient density as an articulation proxy
+- light score-audio validation through pitch-class similarity
 
-- some tonal and harmonic readings come from local note-grouping heuristics rather than literal simultaneities
-- cadence and function labels are best treated as analytical proposals to review musically
-- audio and score evidence become especially useful when used together
+## Core Policy
 
-The audio layer is intentionally complementary. It helps with:
-
-- tempo and pulse estimation from recordings
-- loudness and metering summaries
-- key estimation from performed audio
-- spectral descriptors that can reflect interpretation, articulation, and sonority
-
-It does not replace score-based harmonic analysis. For Roman numerals, harmonic function, cadences, and voice-leading, symbolic input remains the main source of truth.
+- For harmony, rely on the curated symbolic corpus.
+- For expression, rely on a single-performer private audio corpus.
+- For reproducibility, keep manifests, scripts, and public references in git.
+- For copyright-sensitive materials, keep local-only assets in case-study private folders.
 
 ## Repository Layout
 
 ```text
 bach-preludes-analysis/
 ├── data/
-│   ├── audio/
-│   │   ├── processed/
-│   │   └── raw/
-│   ├── converted/
-│   │   └── audiveris/
-│   ├── processed/
-│   └── raw/
+│   ├── case_studies/
+│   │   └── bach_cello_suites/
+│   │       ├── catalog/
+│   │       ├── symbolic/
+│   │       │   ├── official_curated/
+│   │       │   ├── raw_pdfs/
+│   │       │   ├── converted/
+│   │       │   └── manifests/
+│   │       └── audio/
+│   │           ├── inbox/
+│   │           ├── private_reference/
+│   │           └── processed/
+│   └── sources/
+│       └── symbolic/
+├── docs/internal/
 ├── notebooks/
 ├── outputs/
-│   ├── figures/
-│   └── reports/
+├── scripts/
 ├── src/bach_preludes_analysis/
-│   ├── analysis/
-│   └── reporting/
 └── tests/
 ```
 
-## Recommended Input
+## Public vs Private
 
-- prefer `MusicXML`, `.mxl`, or `.xml` for the main analyses
-- use `MIDI` mainly as a fallback or supplementary source
-- keep one file per prelude in `data/raw/`
-- use audio files in `data/audio/raw/` when you want to analyze recordings
-- preferred audio formats: `WAV`, `FLAC`, `AIFF`; `MP3` is acceptable if needed
+Public and reproducible:
 
-Suggested filename pattern:
+- source code
+- manifests
+- source-profile metadata
+- notebook
+- curated symbolic corpus when its provenance allows publication
 
-```text
-suite_01_prelude_g_major_bwv1007.musicxml
-suite_02_prelude_d_minor_bwv1008.musicxml
-suite_03_prelude_c_major_bwv1009.musicxml
-suite_04_prelude_eb_major_bwv1010.musicxml
-suite_05_prelude_c_minor_bwv1011.musicxml
-suite_06_prelude_d_major_bwv1012.musicxml
-```
+Private or local-only:
 
-Canonical target list:
+- raw PDFs used for OMR
+- intermediate Audiveris exports
+- private audio recordings such as the Yo-Yo Ma set
 
-`data/raw/cello_suite_manifest.csv`
+These local-only folders are ignored by git.
 
-## Data Architecture
+## Case Study Structure
 
-- `data/raw/pdfs/`: raw split PDF sources used as OMR input
-- `data/converted/audiveris/`: intermediate Audiveris outputs such as `.omr`, `.mxl`, `.musicxml`, and logs
-- `data/raw/`: curated symbolic corpus ready for analysis with canonical filenames
-- `data/processed/`: downstream tabular or derived datasets if we add them later
+Each case study should provide:
 
-The idea is simple: raw sources stay raw, automated conversions stay intermediate, and only cleaned analysis-ready files become part of the canonical corpus.
+- a `catalog/pieces.csv`
+- an `official_curated` symbolic corpus
+- optional raw PDFs and OMR staging
+- an audio inbox and, if needed, a private single-interpreter reference corpus
+
+The active Bach catalog lives at:
+
+`data/case_studies/bach_cello_suites/catalog/pieces.csv`
 
 ## Setup
-
-Create and activate a virtual environment:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
-pip install -e ".[notebook]"
-```
-
-If you want audio analysis with Essentia as well:
-
-```bash
 pip install -e ".[notebook,audio]"
 ```
 
-This installs the fallback audio backend based on `librosa`, which is usually easier to get running.
-
-If you also want the `Essentia` backend, install it separately after confirming platform compatibility:
+If `Essentia` is compatible with your platform, you can install it separately:
 
 ```bash
 pip install essentia
 ```
 
-Depending on your Python version and platform, `Essentia` may need a working compilation toolchain. In this macOS Apple Silicon + Python 3.14 environment, the build failed from source, so the repo keeps it optional and falls back to `librosa`.
+If not, the project falls back to `librosa`.
 
 ## CLI Usage
 
-Analyze one score:
+Describe available case studies:
 
 ```bash
-python main.py analyze --input data/raw/suite_01_prelude_g_major_bwv1007.musicxml
+python main.py describe-case-studies
 ```
 
-Analyze a whole folder:
+Describe profiles and availability for the Bach case study:
 
 ```bash
-python main.py analyze-corpus --input-dir data/raw
+python main.py describe-sources --case-study bach_cello_suites
 ```
 
-Compare all detected preludes:
+Analyze one curated score:
 
 ```bash
-python main.py compare --input-dir data/raw
+python main.py analyze \
+  --case-study bach_cello_suites \
+  --corpus-profile official_curated \
+  --input data/case_studies/bach_cello_suites/symbolic/official_curated/suite_01_prelude_g_major_bwv1007.musicxml
 ```
 
-Analyze one recording:
+Analyze the full curated symbolic corpus:
 
 ```bash
-python main.py analyze-audio --input data/audio/raw/suite_01_prelude_g_major_bwv1007_reference.wav
+python main.py analyze-corpus --case-study bach_cello_suites --corpus-profile official_curated
 ```
 
-Analyze an audio folder:
+Compare all pieces in the active symbolic corpus:
 
 ```bash
-python main.py analyze-audio-corpus --input-dir data/audio/raw
+python main.py compare --case-study bach_cello_suites --corpus-profile official_curated
 ```
 
-Compare multiple recordings:
+Analyze the curated private audio corpus:
 
 ```bash
-python main.py compare-audio --input-dir data/audio/raw
+python main.py analyze-audio-corpus --case-study bach_cello_suites --audio-profile single_interpreter_reference
 ```
 
-Prepare or normalize converted score files into the curated corpus:
+Compare the private audio corpus:
 
 ```bash
-.venv/bin/python scripts/prepare_cello_suite_corpus.py --input data/converted/audiveris --output-dir data/raw
+python main.py compare-audio --case-study bach_cello_suites --audio-profile single_interpreter_reference
 ```
 
-Split the scanned suite PDF into raw prelude PDFs:
+Validate score/audio pairs across the case study:
 
 ```bash
-zsh scripts/split_cello_suite_pdf.sh \
-  "/Users/meco/Downloads/IMSLP268080-PMLP04291-Bach_6_Cello_Suites_without_slurs_Yokoyama_2013.pdf" \
-  data/raw/pdfs
+python main.py validate-case-study --case-study bach_cello_suites --backend librosa
 ```
 
-Install Audiveris into the repo-local ignored `tools/` area:
+## Symbolic Preparation
+
+Normalize converted symbolic files into the official curated corpus:
 
 ```bash
-zsh scripts/install_audiveris.sh ./tools/Audiveris.app macos-binary
+.venv/bin/python scripts/prepare_case_study_corpus.py \
+  --case-study bach_cello_suites \
+  --input data/case_studies/bach_cello_suites/symbolic/converted/audiveris
 ```
 
-Process those raw PDFs with Audiveris:
+## Audio Organization
+
+Move or copy private audio files from the inbox into canonical filenames:
 
 ```bash
-zsh scripts/process_raw_pdfs_with_audiveris.sh data/raw/pdfs data/converted/audiveris ./tools/Audiveris.app
+.venv/bin/python scripts/organize_case_study_audio.py \
+  --case-study bach_cello_suites \
+  --mode copy
 ```
 
-The script automatically sets a repo-local `HOME` for Audiveris so it does not need to write into your user Library folder while processing.
-If you pass `./tools/Audiveris.app` on macOS, the wrapper launches the app bundle with `open -a` and forwards the batch arguments for you.
-If your user-level Audiveris install already has OCR languages, the wrapper copies `tessdata` into the repo-local Audiveris home automatically.
+## External Symbolic Reference Sources
 
-Open generated MusicXML or MXL files in MuseScore Studio:
+Populate external source profiles:
 
 ```bash
-zsh scripts/open_exports_in_musescore.sh data/converted/audiveris
+.venv/bin/python scripts/ingest_kern_sources.py
+.venv/bin/python scripts/ingest_mutopia_sources.py
+.venv/bin/python scripts/ingest_musopen_sources.py
 ```
 
-Run the whole local pipeline in one shot:
-
-```bash
-zsh scripts/run_pdf_to_musescore_pipeline.sh \
-  "/Users/meco/Downloads/IMSLP268080-PMLP04291-Bach_6_Cello_Suites_without_slurs_Yokoyama_2013.pdf" \
-  data/raw/pdfs \
-  data/converted/audiveris \
-  ./tools/Audiveris.app
-```
+These source profiles are for contrast and gap-filling, not for replacing the curated symbolic corpus.
 
 ## Notebook
 
-The main notebook lives in `notebooks/bach_preludes_walkthrough.ipynb`.
+El notebook principal del caso de estudio Bach es:
 
-It is structured as a guided walkthrough so a musician can:
+`notebooks/case_studies/bach_cello_suites/bach_cello_suites_case_study.ipynb`
 
-- load one or many preludes
-- inspect harmonic labels and tonal regions
-- compare cadence profiles, chromatic density, and harmonic rhythm
-- read narrative summaries generated from the symbolic analysis
+Ese cuaderno usa especificamente las preguntas musicales del planteamiento inicial del proyecto y las presenta en formato legible para musicos.
 
-The current notebook focuses on the symbolic workflow first. The audio analysis is available from the CLI and can later be folded into a second notebook or a combined dashboard.
+`notebooks/bach_preludes_walkthrough.ipynb` queda como ruta legacy de compatibilidad.
 
-## Data Sources
+## Project Tracking
 
-See `data/raw/README.md` for recommended ways to obtain `MusicXML` and `MIDI` material legally and cleanly.
+- live project status: `TODO.md`
+- internal architecture and implementation notes: `docs/internal/`
 
-For recordings, see `data/audio/raw/README.md`.
+## Important Caveat
 
-Current corpus target:
-
-- Suite No. 1 in G major, BWV 1007
-- Suite No. 2 in D minor, BWV 1008
-- Suite No. 3 in C major, BWV 1009
-- Suite No. 4 in E-flat major, BWV 1010
-- Suite No. 5 in C minor, BWV 1011
-- Suite No. 6 in D major, BWV 1012
-
-The IMSLP collection page for the six suites confirms the scope and also lists public-domain scans and recordings for the set: [IMSLP 6 Cello Suites, BWV 1007-1012](https://imslp.org/wiki/6_Cello_Suites%2C_BWV_1007-1012_%28Bach%2C_Johann_Sebastian%29).
-
-Recommended MusicXML gathering workflow:
-
-1. Use IMSLP as the authoritative work list and editorial reference for the six suites.
-2. Prefer the Yokoyama `without slurs` edition when you need to start from PDF, because it is much cleaner for OMR than the older scanned editions.
-3. If you only have that PDF, split it into the six raw prelude PDFs with `scripts/split_cello_suite_pdf.sh`.
-4. Run those PDFs through Audiveris into `data/converted/audiveris/`.
-5. Open the results in MuseScore Studio and clean them up manually.
-6. Normalize filenames with `scripts/prepare_cello_suite_corpus.py` into `data/raw/`.
-7. Review each exported prelude quickly in MuseScore before analysis, especially tuplets, rhythm alignment, ornaments, repeats, and any pages with dense beaming.
-
-About automation limits:
-
-- local PDF -> Audiveris -> MusicXML/MXL can be automated
-- opening the results in the local MuseScore app can be automated
-- uploading scores to MuseScore.com is not wired here, because that would require a supported online API or browser automation workflow that is outside the current repo
-
-Known current limitation on this machine:
-
-- Audiveris `5.10.2` installs and runs correctly, and it can create `.omr` books from the split PDF files.
-- The macOS GUI route is currently more reliable than the bare batch CLI for difficult sources, so for borderline pages you should expect to review and possibly export from the Audiveris app itself before MuseScore cleanup.
-
-## Next Directions
-
-- refine cadence detection with phrase-boundary modeling
-- improve non-chord tone labeling with voice-aware context
-- align symbolic and audio analyses into a single report per prelude
-- add score annotation export back into `MusicXML`
-- build an interactive dashboard or lightweight app on top of the same analysis pipeline
+For solo-cello repertory, harmony is often implied rather than literally vertical on the page. This toolkit should therefore be read as an explainable analytical assistant, not as a replacement for musical judgment.

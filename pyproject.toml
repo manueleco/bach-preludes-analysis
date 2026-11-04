@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "bach-preludes-analysis"
 version = "0.1.0"
-description = "Symbolic harmonic analysis and comparison workflows for Bach preludes."
+description = "Symbolic harmonic analysis and audio-assisted comparison workflows for composer-focused collections."
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [

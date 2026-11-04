@@ -19,19 +19,56 @@ env/
 
 # Jupyter
 .ipynb_checkpoints/
+tmp/
 
-# Local data and generated outputs
+# Generated outputs
 outputs/reports/*
 outputs/figures/*
 !outputs/reports/.gitkeep
 !outputs/figures/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
+
+# Local-only case-study assets
+data/case_studies/*/symbolic/raw_pdfs/*
+!data/case_studies/*/symbolic/raw_pdfs/README.md
+data/case_studies/*/symbolic/converted/audiveris/*
+!data/case_studies/*/symbolic/converted/audiveris/README.md
+data/case_studies/*/audio/inbox/*
+!data/case_studies/*/audio/inbox/README.md
+data/case_studies/*/audio/private_reference/*
+!data/case_studies/*/audio/private_reference/README.md
+data/case_studies/*/audio/processed/*
+!data/case_studies/*/audio/processed/.gitkeep
+
+# Legacy local folders kept for compatibility
 data/raw/pdfs/**
 !data/raw/pdfs/.gitkeep
 data/converted/audiveris/*
 !data/converted/audiveris/.gitkeep
+data/audio/raw/*
+!data/audio/raw/README.md
+data/audio/processed/*
+!data/audio/processed/.gitkeep
+
+# External source downloads
+data/sources/symbolic/kern/*
+!data/sources/symbolic/kern/.gitkeep
+!data/sources/symbolic/kern/README.md
+!data/sources/symbolic/kern/manifest.csv
+data/sources/symbolic/mutopia/*
+!data/sources/symbolic/mutopia/.gitkeep
+!data/sources/symbolic/mutopia/README.md
+!data/sources/symbolic/mutopia/manifest.csv
+data/sources/symbolic/musopen/*
+!data/sources/symbolic/musopen/.gitkeep
+!data/sources/symbolic/musopen/README.md
+!data/sources/symbolic/musopen/manifest.csv
+
 tools/**
 !tools/.gitkeep
 
-# Optional raw score copies if they are downloaded locally
+# Legacy private audio source folder
+data/sources/audio/single_interpreter_reference/*
+!data/sources/audio/single_interpreter_reference/.gitkeep
+!data/sources/audio/single_interpreter_reference/README.md

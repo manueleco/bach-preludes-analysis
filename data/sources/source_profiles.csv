@@ -1,0 +1,8 @@
+profile_id,domain,root_dir,role,reference_url
+official_curated,symbolic,data/case_studies/bach_cello_suites/symbolic/official_curated,Main curated harmonic corpus,
+kern_reference,symbolic,data/sources/symbolic/kern,External symbolic contrast corpus,https://github.com/humdrum-tools/humdrum-data
+mutopia_reference,symbolic,data/sources/symbolic/mutopia,External symbolic contrast corpus,https://www.mutopiaproject.org/
+musopen_reference,symbolic,data/sources/symbolic/musopen,External symbolic contrast corpus,https://musopen.org/
+audiveris_intermediate,symbolic,data/case_studies/bach_cello_suites/symbolic/converted/audiveris,Intermediate OMR staging,
+single_interpreter_reference,audio,data/case_studies/bach_cello_suites/audio/private_reference,Primary private expression corpus,
+raw_audio_misc,audio,data/case_studies/bach_cello_suites/audio/inbox,Exploratory private audio inbox,

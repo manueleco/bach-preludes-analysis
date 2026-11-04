@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
+from music21.analysis.discrete import DiscreteAnalysisException
 from music21 import key, stream
 
 from bach_preludes_analysis.config import DEFAULT_KEY_WINDOW_MEASURES
@@ -19,18 +20,29 @@ def _measure_count(score: stream.Score) -> int:
     return max((number for number in measures if number is not None), default=0)
 
 
+def _fallback_key() -> key.Key:
+    return key.Key("C")
+
+
+def _safe_analyze_key(score_like: stream.Stream, fallback: key.Key | None = None) -> key.Key:
+    try:
+        return score_like.analyze("key")
+    except (DiscreteAnalysisException, AttributeError, ValueError):
+        return fallback or _fallback_key()
+
+
 def analyze_global_key(score: stream.Score) -> key.Key:
-    return score.analyze("key")
+    return _safe_analyze_key(score)
 
 
 def analyze_key_regions(
     score: stream.Score,
     window_measures: int = DEFAULT_KEY_WINDOW_MEASURES,
 ) -> list[KeyRegion]:
+    detected_global_key = analyze_global_key(score)
     total_measures = _measure_count(score)
     if total_measures == 0:
-        detected_key = analyze_global_key(score)
-        return [KeyRegion(start_measure=1, end_measure=1, key=_key_label(detected_key))]
+        return [KeyRegion(start_measure=1, end_measure=1, key=_key_label(detected_global_key))]
 
     assignments: list[tuple[int, str, float | None]] = []
     radius = max(1, window_measures // 2)
@@ -39,7 +51,7 @@ def analyze_key_regions(
         end_measure = min(total_measures, start_measure + window_measures - 1)
         start_measure = max(1, end_measure - window_measures + 1)
         excerpt = score.measures(start_measure, end_measure)
-        local_key = excerpt.analyze("key")
+        local_key = _safe_analyze_key(excerpt, fallback=detected_global_key)
         assignments.append(
             (
                 measure_number,

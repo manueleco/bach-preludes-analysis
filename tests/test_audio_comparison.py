@@ -6,7 +6,7 @@ from bach_preludes_analysis.models import AudioAnalysis
 
 def test_compare_audio_analyses_returns_similarity_matrix():
     left = AudioAnalysis(
-        prelude_id="prelude_audio_a",
+        piece_id="piece_audio_a",
         source_path=Path("a.wav"),
         backend="essentia",
         duration_seconds=90.0,
@@ -19,7 +19,7 @@ def test_compare_audio_analyses_returns_similarity_matrix():
         spectral={"spectral_centroid_mean": 1200.0, "spectral_centroid_std": 140.0, "spectral_flux_mean": 0.02, "spectral_flux_std": 0.01},
     )
     right = AudioAnalysis(
-        prelude_id="prelude_audio_b",
+        piece_id="piece_audio_b",
         source_path=Path("b.wav"),
         backend="essentia",
         duration_seconds=95.0,
@@ -35,5 +35,5 @@ def test_compare_audio_analyses_returns_similarity_matrix():
     comparison = compare_audio_analyses([left, right])
 
     assert len(comparison.feature_rows) == 2
-    assert set(comparison.similarity_matrix) == {"prelude_audio_a", "prelude_audio_b"}
-    assert comparison.similarity_matrix["prelude_audio_a"]["prelude_audio_a"] == 1.0
+    assert set(comparison.similarity_matrix) == {"piece_audio_a", "piece_audio_b"}
+    assert comparison.similarity_matrix["piece_audio_a"]["piece_audio_a"] == 1.0

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-import math
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
-from bach_preludes_analysis.io import infer_prelude_id
+from bach_preludes_analysis.analysis.audio_metrics import amplitude_to_db, summarize_expression
+from bach_preludes_analysis.config import DEFAULT_CASE_STUDY_ID
+from bach_preludes_analysis.io import infer_piece_id
 from bach_preludes_analysis.models import AudioAnalysis
 
 
@@ -27,7 +28,7 @@ def _framewise_features(
     sample_rate: int,
     frame_size: int,
     hop_size: int,
-) -> dict[str, float]:
+) -> dict[str, float | np.ndarray]:
     window = es.Windowing(type="hann")
     spectrum = es.Spectrum()
     rms_algorithm = es.RMS()
@@ -37,7 +38,8 @@ def _framewise_features(
     rms_values: list[float] = []
     centroid_values: list[float] = []
     flux_values: list[float] = []
-    previous_spectrum = None
+    flatness_values: list[float] = []
+    bandwidth_values: list[float] = []
 
     for frame in es.FrameGenerator(audio, frameSize=frame_size, hopSize=hop_size, startFromZero=True):
         if len(frame) == 0:
@@ -46,22 +48,37 @@ def _framewise_features(
         current_spectrum = spectrum(windowed)
         rms_values.append(float(rms_algorithm(frame)))
         centroid_values.append(float(centroid_algorithm(current_spectrum)))
-        if previous_spectrum is not None:
-            flux_values.append(float(flux_algorithm(current_spectrum, previous_spectrum)))
-        previous_spectrum = current_spectrum
+        # Match librosa: magnitude-weighted bandwidth in Hz, power flatness.
+        magnitudes = np.asarray(current_spectrum, dtype=float)
+        frequencies = np.linspace(0.0, sample_rate / 2.0, len(magnitudes))
+        weights = magnitudes / max(float(magnitudes.sum()), 1e-12)
+        center = float(np.sum(weights * frequencies))
+        bandwidth_values.append(float(np.sqrt(np.sum(weights * (frequencies - center) ** 2))))
+        power = np.maximum(magnitudes ** 2, 1e-10)
+        flatness_values.append(float(np.exp(np.mean(np.log(power))) / np.mean(power)))
+        # Flux keeps the previous spectrum internally; feed every frame.
+        flux = float(flux_algorithm(current_spectrum))
+        flux_values.append(flux if flux_values else 0.0)
 
     return {
         "rms_mean": float(np.mean(rms_values)) if rms_values else 0.0,
         "rms_std": float(np.std(rms_values)) if rms_values else 0.0,
+        "rms_values": np.asarray(rms_values, dtype=float),
         "spectral_centroid_mean": float(np.mean(centroid_values)) if centroid_values else 0.0,
         "spectral_centroid_std": float(np.std(centroid_values)) if centroid_values else 0.0,
+        "spectral_bandwidth_mean": float(np.mean(bandwidth_values)) if bandwidth_values else 0.0,
+        "spectral_bandwidth_std": float(np.std(bandwidth_values)) if bandwidth_values else 0.0,
+        "spectral_flatness_mean": float(np.mean(flatness_values)) if flatness_values else 0.0,
+        "spectral_flatness_std": float(np.std(flatness_values)) if flatness_values else 0.0,
         "spectral_flux_mean": float(np.mean(flux_values)) if flux_values else 0.0,
         "spectral_flux_std": float(np.std(flux_values)) if flux_values else 0.0,
+        "spectral_flux_values": np.asarray(flux_values, dtype=float),
     }
 
 
 def analyze_audio_with_essentia(
     input_path: Path,
+    case_study_id: str = DEFAULT_CASE_STUDY_ID,
     sample_rate: int = 44100,
     frame_size: int = 4096,
     hop_size: int = 2048,
@@ -80,11 +97,19 @@ def analyze_audio_with_essentia(
     absolute_peak = float(np.max(np.abs(audio)))
     global_rms = float(np.sqrt(np.mean(np.square(audio))))
     crest_factor = absolute_peak / max(global_rms, 1e-12)
-    peak_dbfs = 20.0 * math.log10(max(absolute_peak, 1e-12))
+    peak_dbfs = amplitude_to_db(absolute_peak)
     loudness = float(es.Loudness()(audio))
+    beat_times = np.asarray(beats, dtype=float)
+    expression = summarize_expression(
+        rms_values=np.asarray(frame_stats["rms_values"], dtype=float),
+        activation_values=np.asarray(frame_stats["spectral_flux_values"], dtype=float),
+        beat_times=beat_times,
+        duration_seconds=duration_seconds,
+        frame_hop_seconds=float(hop_size) / float(sample_rate),
+    )
 
     analysis = AudioAnalysis(
-        prelude_id=infer_prelude_id(input_path),
+        piece_id=infer_piece_id(input_path, case_study_id=case_study_id),
         source_path=input_path,
         backend="essentia",
         duration_seconds=round(duration_seconds, 3),
@@ -105,6 +130,10 @@ def analyze_audio_with_essentia(
         spectral={
             "spectral_centroid_mean": round(frame_stats["spectral_centroid_mean"], 4),
             "spectral_centroid_std": round(frame_stats["spectral_centroid_std"], 4),
+            "spectral_bandwidth_mean": round(frame_stats["spectral_bandwidth_mean"], 4),
+            "spectral_bandwidth_std": round(frame_stats["spectral_bandwidth_std"], 4),
+            "spectral_flatness_mean": round(frame_stats["spectral_flatness_mean"], 6),
+            "spectral_flatness_std": round(frame_stats["spectral_flatness_std"], 6),
             "spectral_flux_mean": round(frame_stats["spectral_flux_mean"], 6),
             "spectral_flux_std": round(frame_stats["spectral_flux_std"], 6),
         },
@@ -112,6 +141,10 @@ def analyze_audio_with_essentia(
             "estimated_key": str(key),
             "estimated_scale": str(scale),
             "key_strength": round(float(strength), 4),
+        },
+        expression={
+            name: round(float(value), 6) if isinstance(value, float) and value is not None else value
+            for name, value in expression.items()
         },
     )
     return analysis

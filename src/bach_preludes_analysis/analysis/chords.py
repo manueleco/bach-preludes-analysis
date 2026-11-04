@@ -23,6 +23,8 @@ def _group_key(element: note.GeneralNote, granularity: str) -> tuple[int | None,
         return (measure_number, round(float(element.offset), 3), round(float(element.offset), 3))
 
     beat = float(element.beat) if element.beat is not None else None
+    if beat is not None and math.isnan(beat):
+        beat = None
     beat_group = None if beat is None else int(math.floor(beat - 1e-9) + 1)
     return (measure_number, beat_group, round(float(element.offset), 3))
 
@@ -71,7 +73,11 @@ def _collect_bucket_records(score: stream.Score, granularity: str) -> list[dict[
             bucket_id,
             {
                 "measure_number": element.measureNumber,
-                "beat": float(element.beat) if element.beat is not None else None,
+                "beat": (
+                    None
+                    if element.beat is None or math.isnan(float(element.beat))
+                    else float(element.beat)
+                ),
                 "offset_ql": float(element.offset),
                 "duration_ql": 0.0,
                 "observed_pitches": [],

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import math
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 
-from bach_preludes_analysis.io import infer_prelude_id
+from bach_preludes_analysis.analysis.audio_metrics import amplitude_to_db, summarize_expression
+from bach_preludes_analysis.config import DEFAULT_CASE_STUDY_ID
+from bach_preludes_analysis.io import infer_piece_id
 from bach_preludes_analysis.models import AudioAnalysis
 
 PITCH_CLASS_NAMES = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"]
@@ -47,6 +47,7 @@ def _estimate_key_from_chroma(chroma_vector: np.ndarray) -> tuple[str, str, floa
 
 def analyze_audio_with_librosa(
     input_path: Path,
+    case_study_id: str = DEFAULT_CASE_STUDY_ID,
     sample_rate: int = 44100,
     frame_size: int = 4096,
     hop_size: int = 2048,
@@ -60,10 +61,22 @@ def analyze_audio_with_librosa(
     duration_seconds = float(librosa.get_duration(y=audio, sr=detected_sample_rate))
     onset_envelope = librosa.onset.onset_strength(y=audio, sr=detected_sample_rate, hop_length=hop_size)
     tempo, beat_frames = librosa.beat.beat_track(y=audio, sr=detected_sample_rate, hop_length=hop_size)
+    beat_times = librosa.frames_to_time(beat_frames, sr=detected_sample_rate, hop_length=hop_size)
     rms = librosa.feature.rms(y=audio, frame_length=frame_size, hop_length=hop_size)[0]
     spectral_centroid = librosa.feature.spectral_centroid(
         y=audio,
         sr=detected_sample_rate,
+        n_fft=frame_size,
+        hop_length=hop_size,
+    )[0]
+    spectral_bandwidth = librosa.feature.spectral_bandwidth(
+        y=audio,
+        sr=detected_sample_rate,
+        n_fft=frame_size,
+        hop_length=hop_size,
+    )[0]
+    spectral_flatness = librosa.feature.spectral_flatness(
+        y=audio,
         n_fft=frame_size,
         hop_length=hop_size,
     )[0]
@@ -79,13 +92,20 @@ def analyze_audio_with_librosa(
     absolute_peak = float(np.max(np.abs(audio)))
     global_rms = float(np.sqrt(np.mean(np.square(audio))))
     crest_factor = absolute_peak / max(global_rms, 1e-12)
-    peak_dbfs = 20.0 * math.log10(max(absolute_peak, 1e-12))
+    peak_dbfs = amplitude_to_db(absolute_peak)
     rms_mean = float(np.mean(rms))
     rms_std = float(np.std(rms))
-    level_dbfs_mean = 20.0 * math.log10(max(rms_mean, 1e-12))
+    level_dbfs_mean = amplitude_to_db(rms_mean)
+    expression = summarize_expression(
+        rms_values=rms,
+        activation_values=onset_envelope,
+        beat_times=np.asarray(beat_times, dtype=float),
+        duration_seconds=duration_seconds,
+        frame_hop_seconds=float(hop_size) / float(detected_sample_rate),
+    )
 
     return AudioAnalysis(
-        prelude_id=infer_prelude_id(input_path),
+        piece_id=infer_piece_id(input_path, case_study_id=case_study_id),
         source_path=input_path,
         backend="librosa",
         duration_seconds=round(duration_seconds, 3),
@@ -106,6 +126,10 @@ def analyze_audio_with_librosa(
         spectral={
             "spectral_centroid_mean": round(float(np.mean(spectral_centroid)), 4),
             "spectral_centroid_std": round(float(np.std(spectral_centroid)), 4),
+            "spectral_bandwidth_mean": round(float(np.mean(spectral_bandwidth)), 4),
+            "spectral_bandwidth_std": round(float(np.std(spectral_bandwidth)), 4),
+            "spectral_flatness_mean": round(float(np.mean(spectral_flatness)), 6),
+            "spectral_flatness_std": round(float(np.std(spectral_flatness)), 6),
             "spectral_flux_mean": round(float(np.mean(onset_envelope)), 6),
             "spectral_flux_std": round(float(np.std(onset_envelope)), 6),
         },
@@ -114,5 +138,9 @@ def analyze_audio_with_librosa(
             "estimated_scale": scale,
             "key_strength": key_strength,
             "chroma_profile": [round(float(value), 6) for value in chroma_mean.tolist()],
+        },
+        expression={
+            name: round(float(value), 6) if isinstance(value, float) and value is not None else value
+            for name, value in expression.items()
         },
     )

@@ -12,7 +12,9 @@ def build_audio_summary(analysis: AudioAnalysis) -> dict[str, str]:
         else f"nivel medio {analysis.metering.get('level_dbfs_mean')} dBFS"
     )
     overview = (
-        f"Backend usado: {analysis.backend}. Duracion aproximada: {analysis.duration_seconds} segundos. "
+        f"Caso de estudio: {analysis.case_study_label}. "
+        f"Fuente activa: {analysis.corpus_profile_label}. Backend usado: {analysis.backend}. "
+        f"Duracion aproximada: {analysis.duration_seconds} segundos. "
         f"Tempo estimado desde audio: {analysis.tempo_bpm} BPM, con {analysis.beat_count} pulsos detectados."
     )
     tonality = f"Tonalidad estimada desde audio: {key_label}, con fuerza tonal {analysis.key_strength}."
@@ -24,11 +26,22 @@ def build_audio_summary(analysis: AudioAnalysis) -> dict[str, str]:
     )
     timbre = (
         f"Huella espectral: centroide medio {analysis.spectral.get('spectral_centroid_mean')} Hz "
-        f"y flujo espectral medio {analysis.spectral.get('spectral_flux_mean')}."
+        f"y flujo espectral medio {analysis.spectral.get('spectral_flux_mean')}. "
+        f"Bandwidth medio {analysis.spectral.get('spectral_bandwidth_mean')} y flatness media {analysis.spectral.get('spectral_flatness_mean')}."
+    )
+    expression = (
+        f"Expresion desde audio: tempo local medio {analysis.expression.get('local_tempo_mean_bpm')} BPM, "
+        f"rubato {analysis.expression.get('rubato_index')}, rango dinamico {analysis.expression.get('dynamic_range_db')} dB, "
+        f"densidad transitoria {analysis.expression.get('transient_density_per_second')} eventos/seg."
+    )
+    reliability = (
+        "Este perfil de audio es para expresion y comparabilidad interpretativa; no para numerales romanos ni cadencias."
     )
     return {
         "overview": overview,
         "tonality": tonality,
         "metering": metering,
         "timbre": timbre,
+        "expression": expression,
+        "reliability": reliability,
     }
